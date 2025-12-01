@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: lookup-postgres
+    environment:
+      POSTGRES_USER: lookup
+      POSTGRES_PASSWORD: lookup
+      POSTGRES_DB: lookup
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: gotenberg
+    ports:
+      - "3000:3000"
+    environment:
+      GOTENBERG_CHROMIUM_DISABLE_SANDBOX: "1"
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=Europe/Berlin
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=lookup
+      - DB_POSTGRESDB_USER=lookup
+      - DB_POSTGRESDB_PASSWORD=lookup
+      - DB_POSTGRESDB_SCHEMA=public
+    volumes:
+      - n8n:/home/node/.n8n
+    depends_on:
+      - postgres
+      - ollama
+      - gotenberg
+    restart: unless-stopped
+
+volumes:
+  ollama:
+  n8n:
+  postgres:
