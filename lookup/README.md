@@ -72,7 +72,7 @@ Port: 5432
 
 #### Ollama
 
-- In n8n unter **Credentials → New → Postgres**
+- In n8n unter **Credentials → New → Ollama**
 - Folgende Werte eintragen:
 
 ```
