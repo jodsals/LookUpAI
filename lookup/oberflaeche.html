@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LookUpAI – Suche</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-soft: #f7f7fb;
+      --bg-tint: #eef2ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --subtle: #6b7280;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --border: #e5e7eb;
+      --success: #065f46;
+      --error: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, var(--bg) 0%, var(--bg-soft) 55%, var(--bg-tint) 100%);
+      background-attachment: fixed;
+    }
+    .wrap { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+
+    .header { margin-bottom: 16px; text-align: center; position: relative; }
+    .logo {
+      display: block;
+      width: 180px;
+      height: auto;
+      margin: 0 auto 18px;
+      filter: drop-shadow(0 6px 16px rgba(0,0,0,.08)) drop-shadow(0 1px 2px rgba(0,0,0,.05));
+    }
+    .sub { color: var(--subtle); font-size: 14px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .pad { padding: 18px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 640px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+    label { display: block; font-size: 14px; margin-bottom: 6px; }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+      resize: vertical;
+      min-height: 80px;
+    }
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+    }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .btn {
+      appearance: none; border: 0; border-radius: 12px; padding: 10px 16px; font-weight: 600; font-size: 14px;
+      color: #fff; background: var(--primary); cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      transition: background .15s ease, transform .05s ease;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn:active { transform: translateY(1px); }
+    .btn[disabled] { background: #c7c9d3; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: #eef2ff;
+    }
+
+    .hint { color: var(--subtle); font-size: 12px; margin-top: 6px; }
+    .status { margin-top: 14px; font-size: 14px; }
+    .ok { color: var(--success); }
+    .err { color: var(--error); }
+
+    .result { margin-top: 16px; }
+    .candidates { margin-top: 16px; }
+    .candidate-list { display: grid; gap: 12px; }
+    .candidate-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+    }
+    .candidate-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .candidate-name { font-weight: 700; font-size: 15px; }
+    .candidate-actions { display: flex; justify-content: flex-end; }
+    .candidate-details summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .candidate-details summary::-webkit-details-marker {
+      display: none;
+    }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--subtle); }
+
+    .facts { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
+    .fact { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background:#fff; }
+
+    .bio { margin-top: 8px; font-size: 14px; line-height: 1.55; color: #111827; }
+    .bio p { margin: 0 0 10px; }
+    pre { white-space: pre-wrap; font-size: 12px; color: #374151; background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .links { margin-top: 8px; font-size: 13px; }
+    .links a { color: var(--primary); text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
+
+    .pdf-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* Verlauf */
+    .history-card {
+      margin-top: 16px;
+    }
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .history-header h2 {
+      margin: 0;
+      font-size: 15px;
+    }
+    .history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .history-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px 8px;
+      background: #fff;
+      font-size: 13px;
+    }
+    .history-item summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .history-item summary::-webkit-details-marker {
+      display: none;
+    }
+    .history-item-main {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    .history-prompt {
+      font-weight: 600;
+      color: #111827;
+    }
+    .history-meta {
+      color: var(--subtle);
+      font-size: 12px;
+    }
+    .history-details {
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: 6px;
+      font-size: 13px;
+    }
+    .history-details .history-bio {
+      margin-bottom: 6px;
+    }
+    .history-details-facts {
+      list-style: none;
+      padding: 0;
+      margin: 6px 0 0;
+      display: grid;
+      gap: 4px;
+    }
+    .history-details-fact {
+      font-size: 12px;
+    }
+    .history-details-fact a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .history-details-fact a:hover {
+      text-decoration: underline;
+    }
+
+    .history-pdf-btn {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* PDF-Preview-Overlay */
+    .pdf-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .pdf-modal {
+      background: #fff;
+      width: min(900px, 95vw);
+      height: min(600px, 90vh);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .pdf-modal-header {
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+    .pdf-modal-header h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+    .pdf-modal-body {
+      flex: 1;
+    }
+    .pdf-modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <img src="logo.png" alt="LookUpAI Logo" class="logo" />
+      <p class="sub">A consistent and up-to-date list of facts about businesspeople</p>
+    </div>
+
+    <!-- Search Form + Result -->
+    <form id="lookupForm" class="card pad" novalidate>
+      <div class="grid">
+        <div style="grid-column: 1 / -1;">
+          <label for="prompt">Prompt *</label>
+          <textarea
+            id="prompt"
+            name="prompt"
+            placeholder="z. B.: &quot;Suche alle verfügbaren Fakten über Tim Cook, CEO von Apple.&quot;"></textarea>
+          <div class="hint">
+            Beschreibe in einem Satz, wonach gesucht werden soll
+            (Name, Rolle, Firma, Ort …).<br />
+            Beispiel: <em>„Finde Fakten zu Alfred Maier, CTO bei HP in Berlin“</em>.
+          </div>
+        </div>
+      </div>
+
+      <div id="hintSection" style="margin-top:12px;" hidden>
+        <label for="hintInput">Hinweis (erforderlich)</label>
+        <textarea
+          id="hintInput"
+          name="hint"
+          placeholder="z. B.: &quot;Geboren 1960 in Muenchen, aktuell Vorstand.&quot;"></textarea>
+        <div class="hint">Bitte gib eine klare Zusatzinfo, damit die Suche praeziser wird.</div>
+        <div class="row" style="margin-top:8px;">
+          <div class="hint">Optional: du kannst die Hinweisabfrage abbrechen.</div>
+          <button id="hintCancelBtn" type="button" class="btn-secondary btn">Hinweis abbrechen</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:16px;">
+        <div class="hint">Bei Klick wird der Prompt an den n8n-Workflow gesendet.</div>
+        <button id="submitBtn" class="btn" type="submit">Suche starten</button>
+      </div>
+
+      <div id="status" class="status" aria-live="polite"></div>
+
+      <div id="candidates" class="candidates" hidden>
+        <div class="card pad">
+          <div class="row-between">
+            <h2 style="margin:0;font-size:16px;">Mehrere Treffer gefunden</h2>
+            <span class="badge">Bitte auswaehlen</span>
+          </div>
+          <div id="candidateList" class="candidate-list" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <div id="result" class="result" hidden>
+        <div class="card pad">
+          <div class="row-between">
+            <h2 style="margin:0;font-size:16px;">Gefundene Person</h2>
+            <span id="confidence" class="badge">Confidence: –</span>
+          </div>
+          <div id="canonicalName" style="margin-top:6px;font-size:14px;"></div>
+
+          <!-- Kurzprofil -->
+          <div id="shortBio" class="bio" hidden></div>
+
+          <!-- Links (z.B. Wikipedia) -->
+          <div id="links" class="links" hidden></div>
+
+          <ul id="facts" class="facts"></ul>
+          <div id="raw" style="margin-top:12px;"></div>
+
+          <!-- PDF-Aktionen: nur sichtbar, wenn es eine Kurzbiografie gibt -->
+          <div id="pdfActions" class="pdf-actions" hidden>
+            <button id="pdfPreviewBtn" type="button" class="btn-secondary btn">PDF-Vorschau</button>
+            <button id="pdfDownloadBtn" type="button" class="btn">PDF herunterladen</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- History Card -->
+    <div id="historyCard" class="card pad history-card">
+      <div class="history-header">
+        <h2>Letzte Suchen</h2>
+        <button id="historyReloadBtn" type="button" class="btn-secondary" style="padding:6px 10px;font-size:12px;">
+          Aktualisieren
+        </button>
+      </div>
+      <div id="historyStatus" class="hint">Lade Verlauf …</div>
+      <ul id="historyList" class="history-list"></ul>
+    </div>
+  </div>
+
+  <!-- Preview-Overlay -->
+  <div id="pdfModalBackdrop" class="pdf-modal-backdrop">
+    <div class="pdf-modal">
+      <div class="pdf-modal-header">
+        <h3>PDF-Vorschau</h3>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="pdfModalDownloadBtn" type="button" class="btn-secondary btn" style="padding:6px 10px;font-size:12px;">Download</button>
+          <button id="pdfModalCloseBtn" type="button" class="btn" style="padding:6px 10px;font-size:12px;">Schließen</button>
+        </div>
+      </div>
+      <div class="pdf-modal-body">
+        <iframe id="pdfPreviewFrame" title="PDF-Vorschau"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const N8N_WEBHOOK_URL     = "http://localhost:5678/webhook/start";
+    const N8N_PDF_WEBHOOK_URL = "http://localhost:5678/webhook/pdf";
+    const N8N_HISTORY_URL     = "http://localhost:5678/webhook/history";
+    const N8N_INSERT_URL      = "http://localhost:5678/webhook/insert";
+
+    const form = document.getElementById('lookupForm');
+    const btn  = document.getElementById('submitBtn');
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+    const candidatesEl = document.getElementById('candidates');
+    const candidateListEl = document.getElementById('candidateList');
+    const nameEl = document.getElementById('canonicalName');
+    const confEl = document.getElementById('confidence');
+    const factsEl = document.getElementById('facts');
+    const rawEl = document.getElementById('raw');
+    const shortBioEl = document.getElementById('shortBio');
+    const linksEl = document.getElementById('links');
+    const pdfActionsEl = document.getElementById('pdfActions');
+    const pdfPreviewBtn = document.getElementById('pdfPreviewBtn');
+    const pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
+    const hintSectionEl = document.getElementById('hintSection');
+    const hintInputEl = document.getElementById('hintInput');
+    const hintCancelBtn = document.getElementById('hintCancelBtn');
+
+    const pdfModalBackdrop = document.getElementById('pdfModalBackdrop');
+    const pdfPreviewFrame = document.getElementById('pdfPreviewFrame');
+    const pdfModalCloseBtn = document.getElementById('pdfModalCloseBtn');
+    const pdfModalDownloadBtn = document.getElementById('pdfModalDownloadBtn');
+
+    // History elements
+    const historyListEl = document.getElementById('historyList');
+    const historyStatusEl = document.getElementById('historyStatus');
+    const historyReloadBtn = document.getElementById('historyReloadBtn');
+
+    let lastResult = null;        // vollständige Antwort vom Lookup-Webhook
+    let currentPdfBlobUrl = null; // URL der zuletzt erzeugten PDF
+    let awaitingHint = false;
+    let pendingPrompt = '';
+    let candidates = [];
+
+    // Cache der History-Einträge aus der DB
+    let historyEntries = [];
+
+    function setStatus(msg, ok=false) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status ' + (ok ? 'ok' : 'err');
+    }
+    const normalize = (s) => (s || '').trim();
+
+    function resetHintRequest() {
+      awaitingHint = false;
+      pendingPrompt = '';
+      hintInputEl.value = '';
+      hintSectionEl.hidden = true;
+    }
+
+    function showHintRequest(message, promptValue) {
+      awaitingHint = true;
+      pendingPrompt = promptValue || pendingPrompt;
+      hintSectionEl.hidden = false;
+      setStatus(message || 'Bitte gib einen Hinweis an, um die Suche zu praezisieren.', true);
+      hintInputEl.focus();
+    }
+
+    function resetCandidates() {
+      candidates = [];
+      candidateListEl.innerHTML = '';
+      candidatesEl.hidden = true;
+    }
+
+    function mapItemToInternal(item) {
+      const isOldShape = item && typeof item === 'object' && item.data && typeof item.data === 'object';
+      const isNewShape = item && typeof item === 'object' && ('name' in item || 'text' in item || 'sources' in item);
+
+      let canonicalName = '–';
+      let shortBio = '';
+      let facts = [];
+      let confidence = 0.5;
+      let wiki = null;
+
+      if (isOldShape) {
+        canonicalName = item?.data?.canonicalName || item?.data?.canonical_name || '–';
+        shortBio = item?.data?.shortBio || item?.data?.text || '';
+        const confOld = item?.data?.confidence;
+        confidence = (typeof confOld === 'number' && !isNaN(confOld)) ? confOld : (Number(confOld) || 0.5);
+
+        const oldFacts = Array.isArray(item?.data?.facts) ? item.data.facts : [];
+        facts = oldFacts.map((f, i) => ({
+          key: f.key || `Fakt ${i + 1}`,
+          value: f.value ?? '',
+          source: f.source || ''
+        }));
+
+        wiki = item?.data?.urls?.wikipedia || null;
+      } else if (isNewShape) {
+        canonicalName = item?.name || '–';
+        shortBio = item?.text || '';
+        const confNew = item?.confidence;
+        confidence = (typeof confNew === 'number' && !isNaN(confNew)) ? confNew : (Number(confNew) || 0.5);
+
+        const sources = Array.isArray(item?.sources) ? item.sources : [];
+        facts = sources
+          .map((s, i) => {
+            const url = s?.link || s?.value || s?.url || '';
+            return {
+              key: s?.key || `Quelle ${i + 1}`,
+              value: url,
+              source: s?.source || 'Web'
+            };
+          })
+          .filter(f => f.value);
+
+        wiki = sources
+          .map(s => s?.link || s?.value || s?.url || '')
+          .find(u => typeof u === 'string' && /wikipedia\.org/i.test(u)) || null;
+      } else {
+        return null;
+      }
+
+      return { canonicalName, shortBio, facts, confidence, wiki };
+    }
+
+    function renderResultFromInternal(dataObj) {
+      if (!dataObj) return;
+      const { canonicalName, shortBio, facts, confidence, wiki } = dataObj;
+
+      lastResult = {
+        status: 'ok',
+        data: {
+          canonicalName,
+          shortBio,
+          facts,
+          confidence,
+          image: null,
+          urls: { wikipedia: wiki }
+        },
+        message: 'Mapped for PDF'
+      };
+
+      setStatus('Ergebnisse geladen.', true);
+      resultEl.hidden = false;
+      rawEl.innerHTML = '';
+
+      nameEl.textContent = 'Name: ' + canonicalName;
+      confEl.textContent = 'Confidence: ' + (confidence == null ? '–' : (Math.round(confidence * 100) + '%'));
+
+      if (shortBio) {
+        shortBioEl.innerHTML = toParagraphs(shortBio);
+        shortBioEl.hidden = false;
+        pdfActionsEl.hidden = false;
+      } else {
+        shortBioEl.hidden = true;
+        pdfActionsEl.hidden = true;
+      }
+
+      if (wiki) {
+        linksEl.innerHTML = `Quelle: <a href="${escapeHtml(wiki)}" target="_blank" rel="noopener">Wikipedia</a>`;
+        linksEl.hidden = false;
+      } else {
+        linksEl.hidden = true;
+        linksEl.innerHTML = '';
+      }
+
+      factsEl.innerHTML = facts.length
+        ? facts.map(f => {
+            const key = escapeHtml(f.key || '');
+            const rawValue = f.value || '';
+            const isUrl = /^https?:\/\//i.test(rawValue);
+            const displayValue = isUrl ? shortenUrl(rawValue, 60) : rawValue;
+            const safeDisplay = escapeHtml(displayValue);
+
+            const valueHtml = isUrl
+              ? `<a href="${escapeHtml(rawValue)}" target="_blank" rel="noopener">${safeDisplay}</a>`
+              : safeDisplay;
+
+            return `
+              <li class="fact">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <div>
+                    <div style="font-weight:600;">${key}</div>
+                    <div>${valueHtml}</div>
+                  </div>
+                  ${f.source ? `<span class="badge">Quelle: ${escapeHtml(f.source)}</span>` : ''}
+                </div>
+              </li>`;
+          }).join('')
+        : '';
+    }
+
+    function renderCandidateList(items) {
+      candidates = items;
+      candidateListEl.innerHTML = items.map((entry, idx) => {
+        const name = escapeHtml(entry.canonicalName || '–');
+        const bio = entry.shortBio ? toParagraphs(entry.shortBio) : '<div class="hint">Keine Kurzbiografie vorhanden.</div>';
+
+        return `
+          <div class="candidate-card">
+            <details class="candidate-details">
+              <summary>
+                <div class="candidate-name">${name}</div>
+                <span class="badge">Vorschau</span>
+              </summary>
+              <div class="bio" style="margin-top:8px;">${bio}</div>
+              <div class="candidate-actions" style="margin-top:10px;">
+                <button type="button" class="btn" data-candidate-idx="${idx}" style="padding:6px 10px;font-size:12px;">Auswaehlen</button>
+              </div>
+            </details>
+          </div>
+        `;
+      }).join('');
+      candidatesEl.hidden = false;
+    }
+
+    async function insertSelectedToHistory(entry) {
+      const payload = {
+        name: entry.canonicalName || '–',
+        text: entry.shortBio || '',
+        confidence: entry.confidence ?? 0.5,
+        source: Array.isArray(entry.facts) ? entry.facts : []
+      };
+
+      const res = await fetch(N8N_INSERT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Insert-Fehler ${res.status}: ${text || res.statusText}`);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#39;");
+    }
+
+    // Paragraph-Formatierung für LLM/WP-Texte
+    function toParagraphs(s) {
+      const safe = escapeHtml(s);
+      return safe
+        .split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+    }
+
+    // Lange URLs optisch kürzen
+    function shortenUrl(s, max = 40) {
+      if (!s) return '';
+      const str = String(s);
+      if (str.length <= max) return str;
+      return str.slice(0, max) + '…';
+    }
+
+    // --- Verlauf laden & rendern ---
+    async function loadHistory() {
+      try {
+        historyStatusEl.textContent = 'Lade Verlauf …';
+        historyListEl.innerHTML = '';
+
+        const res = await fetch(N8N_HISTORY_URL, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+        });
+
+        const text = await res.text();
+        console.log('History raw response text:', text);
+
+        let data;
+        try { data = JSON.parse(text); } catch { data = []; }
+        console.log('History parsed data:', data);
+
+        if (!res.ok) {
+          historyStatusEl.textContent = `Fehler beim Laden des Verlaufs (${res.status})`;
+          return;
+        }
+
+        let entries;
+        if (Array.isArray(data)) {
+          entries = data;
+        } else if (data && typeof data === 'object') {
+          entries = [data];
+        } else {
+          entries = [];
+        }
+
+        // Cache setzen
+        historyEntries = entries;
+
+        if (entries.length === 0) {
+          historyStatusEl.textContent = 'Noch keine Suchen gespeichert.';
+          return;
+        }
+
+        historyStatusEl.textContent = '';
+
+        historyListEl.innerHTML = entries.map((entry, idx) => {
+          const name = escapeHtml(entry.canonical_name || '–');
+
+          const confNum = Number(entry.confidence);
+          const confDisp = !isNaN(confNum)
+            ? `${Math.round(confNum * 100)}%`
+            : escapeHtml(String(entry.confidence ?? '–'));
+
+          const createdRaw = entry.created_at || entry.createdAt;
+          let createdDisp = '';
+          if (createdRaw) {
+            const d = new Date(createdRaw);
+            if (!isNaN(d.getTime())) {
+              createdDisp = d.toLocaleString('de-DE', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              });
+            } else {
+              createdDisp = escapeHtml(String(createdRaw));
+            }
+          }
+
+          // facts: kommt aus Postgres oft als TEXT (JSON-String). Kann aber auch null oder "kaputt-escaped" sein.
+          let facts = [];
+          if (Array.isArray(entry.facts)) {
+            facts = entry.facts;
+          } else if (typeof entry.facts === 'string') {
+            const rawFacts = String(entry.facts);
+            try {
+              const parsed = JSON.parse(rawFacts);
+              if (Array.isArray(parsed)) facts = parsed;
+            } catch (e1) {
+              // Fallback: alte kaputte Form wie: "{\"{\\\"key\\\":...}\", ... }"
+              // 1) alle JSON-Objekte aus dem String extrahieren
+              const matches = rawFacts.match(/\{\\"key\\"[\s\S]*?\\"source\\"[\s\S]*?\}/g);
+              if (matches && matches.length) {
+                facts = matches.map(m => {
+                  try {
+                    // m enthält noch \\" Escapes
+                    const cleaned = m.replace(/\\"/g, '"');
+                    return JSON.parse(cleaned);
+                  } catch {
+                    return null;
+                  }
+                }).filter(Boolean);
+              } else {
+                console.warn('Konnte facts nicht parsen:', entry.facts, e1);
+              }
+            }
+          }
+
+          const factsHtml = facts.length
+            ? `<ul class="history-details-facts">
+                ${facts.map(f => {
+                  const key = escapeHtml(f.key || '');
+                  const value = String(f.value || '');
+                  const isUrl = /^https?:\/\//i.test(value);
+                  const displayValue = isUrl ? shortenUrl(value, 60) : value;
+                  const safeDisplay = escapeHtml(displayValue);
+                  const valueHtml = isUrl
+                    ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener">${safeDisplay}</a>`
+                    : safeDisplay;
+                  return `<li class="history-details-fact"><strong>${key}</strong><br>${valueHtml}</li>`;
+                }).join('')}
+              </ul>`
+            : '<div class="history-meta">Keine gespeicherten Quellen.</div>';
+
+          const bioText = entry.shortBio || entry.short_bio || entry.short_bio || '';
+          const bio = bioText ? toParagraphs(bioText) : '<div class="history-meta">Keine Kurzbiografie gespeichert.</div>';
+
+          return `
+            <li class="history-item">
+              <details>
+                <summary>
+                  <div class="history-item-main">
+                    <div>
+                      <div class="history-prompt">${name}</div>
+                      <div class="history-meta">
+                        Confidence: ${confDisp}
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                      ${createdDisp ? `<div class="history-meta">${createdDisp}</div>` : ''}
+                      <button
+                        type="button"
+                        class="history-pdf-btn btn-secondary"
+                        data-history-idx="${idx}"
+                      >
+                        PDF
+                      </button>
+                    </div>
+                  </div>
+                </summary>
+                <div class="history-details">
+                  <div class="history-bio">
+                    ${bio}
+                  </div>
+                  <div class="history-meta" style="margin-top:4px;margin-bottom:4px;">Quellen:</div>
+                  ${factsHtml}
+                </div>
+              </details>
+            </li>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error(err);
+        historyStatusEl.textContent = 'Fehler beim Laden des Verlaufs.';
+      }
+    }
+
+    // PDF – generisch für beliebige Daten (z.B. History-Eintrag)
+    async function generatePdfBlobFor(dataObj) {
+      /**
+       * dataObj = {
+       *   canonicalName,
+       *   shortBio,
+       *   facts: [{ key, value, source }],
+       *   confidence
+       * }
+       */
+      if (!dataObj || !dataObj.shortBio) {
+        throw new Error("Keine Biografie vorhanden – PDF nicht verfügbar.");
+      }
+
+      const payload = {
+        status: 'ok',
+        data: {
+          canonicalName: dataObj.canonicalName || '–',
+          shortBio: dataObj.shortBio,
+          facts: Array.isArray(dataObj.facts) ? dataObj.facts : [],
+          confidence: typeof dataObj.confidence === 'number'
+            ? dataObj.confidence
+            : Number(dataObj.confidence) || 0.5,
+          image: null,
+          urls: { wikipedia: null },
+        },
+        message: 'Built from history entry',
+      };
+
+      const res = await fetch(N8N_PDF_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf'
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`PDF-Fehler ${res.status}: ${text || res.statusText}`);
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.toLowerCase().includes('application/pdf')) {
+        const text = await res.text();
+        throw new Error(
+          'Server hat kein PDF gesendet.\n' +
+          'Content-Type: ' + contentType + '\n' +
+          'Body (Auszug): ' + text.slice(0, 200)
+        );
+      }
+
+      const blob = await res.blob();
+      return blob;
+    }
+
+    // PDF – Backend aufrufen für aktuelles Such-Ergebnis
+    async function generatePdfBlob() {
+      if (!lastResult || !lastResult.data || !lastResult.data.shortBio) {
+        throw new Error("Keine Biografie vorhanden – PDF nicht verfügbar.");
+      }
+
+      if (currentPdfBlobUrl) {
+        return currentPdfBlobUrl;
+      }
+
+      const res = await fetch(N8N_PDF_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf'
+        },
+        body: JSON.stringify(lastResult),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`PDF-Fehler ${res.status}: ${text || res.statusText}`);
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.toLowerCase().includes('application/pdf')) {
+        const text = await res.text();
+        throw new Error(
+          'Server hat kein PDF gesendet.\n' +
+          'Content-Type: ' + contentType + '\n' +
+          'Body (Auszug): ' + text.slice(0, 200)
+        );
+      }
+
+      const blob = await res.blob();
+      currentPdfBlobUrl = URL.createObjectURL(blob);
+      return currentPdfBlobUrl;
+    }
+
+    async function handlePdfDownload() {
+      try {
+        pdfDownloadBtn.disabled = true;
+        pdfPreviewBtn.disabled = true;
+        setStatus('PDF wird erstellt …', true);
+
+        const url = await generatePdfBlob();
+        const a = document.createElement('a');
+        a.href = url;
+        const name = (lastResult?.data?.canonicalName || 'Steckbrief').replace(/[^\w\-]+/g, '_');
+        a.download = `${name}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setStatus('PDF erfolgreich erstellt.', true);
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || 'Fehler bei der PDF-Erzeugung.', false);
+      } finally {
+        pdfDownloadBtn.disabled = false;
+        pdfPreviewBtn.disabled = false;
+      }
+    }
+
+    async function handlePdfPreview() {
+      try {
+        pdfDownloadBtn.disabled = true;
+        pdfPreviewBtn.disabled = true;
+        setStatus('PDF wird erstellt …', true);
+
+        const url = await generatePdfBlob();
+        pdfPreviewFrame.src = url;
+        pdfModalBackdrop.style.display = 'flex';
+
+        setStatus('PDF-Vorschau geladen.', true);
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || 'Fehler bei der PDF-Erzeugung.', false);
+      } finally {
+        pdfDownloadBtn.disabled = false;
+        pdfPreviewBtn.disabled = false;
+      }
+    }
+
+    function closePdfModal() {
+      pdfModalBackdrop.style.display = 'none';
+      pdfPreviewFrame.src = '';
+    }
+
+    pdfDownloadBtn.addEventListener('click', handlePdfDownload);
+    pdfPreviewBtn.addEventListener('click', handlePdfPreview);
+    pdfModalCloseBtn.addEventListener('click', closePdfModal);
+    pdfModalBackdrop.addEventListener('click', (e) => {
+      if (e.target === pdfModalBackdrop) closePdfModal();
+    });
+    pdfModalDownloadBtn.addEventListener('click', handlePdfDownload);
+
+    historyReloadBtn.addEventListener('click', loadHistory);
+    hintCancelBtn.addEventListener('click', () => {
+      resetHintRequest();
+      setStatus('Hinweisabfrage abgebrochen.', true);
+    });
+
+    candidateListEl.addEventListener('click', async (e) => {
+      const target = e.target;
+      if (!target || !target.matches('[data-candidate-idx]')) return;
+      const idx = Number(target.getAttribute('data-candidate-idx'));
+      const selected = candidates[idx];
+      if (!selected) return;
+      try {
+        target.disabled = true;
+        await insertSelectedToHistory(selected);
+        resetCandidates();
+        renderResultFromInternal(selected);
+        loadHistory();
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || 'Fehler beim Speichern der Auswahl.', false);
+      } finally {
+        target.disabled = false;
+      }
+    });
+
+    // Klicks im History-List (Event Delegation) -> PDF-Button
+    historyListEl.addEventListener('click', async (e) => {
+      const target = e.target;
+      if (!target || !target.classList.contains('history-pdf-btn')) return;
+
+      const idxStr = target.getAttribute('data-history-idx');
+      if (idxStr == null) return;
+      const idx = Number(idxStr);
+      const entry = historyEntries[idx];
+      if (!entry) return;
+
+      try {
+        target.disabled = true;
+        target.textContent = '...';
+
+        // facts für Payload parsen (robust)
+        let facts = [];
+        if (Array.isArray(entry.facts)) {
+          facts = entry.facts;
+        } else if (typeof entry.facts === 'string') {
+          const rawFacts = String(entry.facts);
+          try {
+            const parsed = JSON.parse(rawFacts);
+            if (Array.isArray(parsed)) facts = parsed;
+          } catch (e1) {
+            const matches = rawFacts.match(/\{\\"key\\"[\s\S]*?\\"source\\"[\s\S]*?\}/g);
+            if (matches && matches.length) {
+              facts = matches.map(m => {
+                try {
+                  const cleaned = m.replace(/\\"/g, '"');
+                  return JSON.parse(cleaned);
+                } catch {
+                  return null;
+                }
+              }).filter(Boolean);
+            } else {
+              console.warn('Konnte facts nicht parsen (für PDF):', entry.facts, e1);
+            }
+          }
+        }
+
+        const dataObj = {
+          canonicalName: entry.canonical_name || '–',
+          shortBio: entry.shortBio || '',
+          facts,
+          confidence: Number(entry.confidence) || 0.5,
+        };
+
+        const blob = await generatePdfBlobFor(dataObj);
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        const safeName = (dataObj.canonicalName || 'Steckbrief').replace(/[^\w\-]+/g, '_');
+        a.download = `${safeName}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error(err);
+        alert(err.message || 'Fehler beim PDF-Download aus dem Verlauf.');
+      } finally {
+        target.disabled = false;
+        target.textContent = 'PDF';
+      }
+    });
+
+    // Form-Submit -> n8n /start-Webhook
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = normalize(document.getElementById('prompt').value);
+
+      const hint = normalize(hintInputEl.value);
+
+      if (!prompt && !awaitingHint) {
+        setStatus('Bitte einen Prompt eingeben.', false);
+        return;
+      }
+
+      if (awaitingHint && !hint) {
+        setStatus('Bitte einen Hinweis eingeben.', false);
+        return;
+      }
+
+      btn.disabled = true;
+      setStatus('Suche läuft …', true);
+      resultEl.hidden = true;
+      resetCandidates();
+      factsEl.innerHTML = '';
+      nameEl.textContent = '';
+      confEl.textContent = 'Confidence: –';
+      rawEl.innerHTML = '';
+      shortBioEl.hidden = true;
+      shortBioEl.innerHTML = '';
+      linksEl.hidden = true;
+      linksEl.innerHTML = '';
+      pdfActionsEl.hidden = true;
+      lastResult = null;
+      if (currentPdfBlobUrl) {
+        URL.revokeObjectURL(currentPdfBlobUrl);
+        currentPdfBlobUrl = null;
+      }
+
+      const payload = awaitingHint
+        ? { prompt: pendingPrompt || prompt, hint }
+        : { prompt };
+
+      try {
+        const res = await fetch(N8N_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
+        if (!res.ok) {
+          setStatus(`Fehler ${res.status}: ${res.statusText}`, false);
+          rawEl.innerHTML = '<pre>' + (text || 'Keine Details') + '</pre>';
+          return;
+        }
+
+        // --- Response normalisieren (unterstützt altes + neues Format) ---
+        let items = Array.isArray(data) ? data : [data];
+        if (items.length === 1 && items[0] && Array.isArray(items[0].data)) {
+          items = items[0].data;
+        }
+        const item = items[0];
+        const status = (item && item.status) ? item.status : 'ok';
+
+        if (status === 'not_found') {
+          setStatus('Keine passende Person gefunden.', false);
+          resultEl.hidden = true;
+          resetHintRequest();
+          return;
+        }
+
+        const numericItems = items
+          .filter((it) => /^[1-6]$/.test(String(it?.status)))
+          .sort((a, b) => Number(a.status) - Number(b.status));
+
+        if (numericItems.length > 0) {
+          const mapped = numericItems
+            .map(mapItemToInternal)
+            .filter(Boolean);
+          if (mapped.length) {
+            setStatus('Mehrere Faktenblaetter gefunden. Bitte waehlen.', true);
+            renderCandidateList(mapped);
+            resultEl.hidden = true;
+            return;
+          }
+        }
+
+        if (status === 'more_info') {
+          const msg = item?.message || item?.data?.message || 'Bitte gib einen Hinweis zur Person an.';
+          showHintRequest(msg, prompt);
+          resultEl.hidden = true;
+          return;
+        }
+
+        if (status !== 'ok') {
+          setStatus('Unerwarteter Status: ' + escapeHtml(String(status)), false);
+          rawEl.innerHTML = '<div class="hint">Antwort (Debug):</div><pre>' + escapeHtml(text) + '</pre>';
+          resetHintRequest();
+          return;
+        }
+
+        const mappedSingle = mapItemToInternal(item);
+        if (!mappedSingle) {
+          setStatus('Unerwartetes Antwortformat.', false);
+          rawEl.innerHTML = '<div class="hint">Unerwartetes Antwortformat:</div><pre>' + escapeHtml(text) + '</pre>';
+          return;
+        }
+
+        renderResultFromInternal(mappedSingle);
+        resetHintRequest();
+
+        // Verlauf neu laden
+        loadHistory();
+      } catch (err) {
+        console.error(err);
+        setStatus('Netzwerk-/CORS-Fehler: ' + (err?.message || err), false);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // Initial: Verlauf laden
+    loadHistory();
+  </script>
+</body>
+</html>
