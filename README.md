@@ -63,6 +63,7 @@ Dort kann der Workflow importiert werden.
 
 1. In n8n oben rechts auf **Import** klicken.
 2. Die Datei **workflow.json** auswählen und bestätigen.
+3. Ollama lokal herunterladen (Modelle: mistral:7b-instruct & qwen2.5:14b)
 
 ### 3.1 Credentials einrichten
 
