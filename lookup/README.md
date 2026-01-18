@@ -70,6 +70,15 @@ Password: lookup
 Port: 5432
 ```
 
+#### Ollama
+
+- In n8n unter **Credentials → New → Postgres**
+- Folgende Werte eintragen:
+
+```
+Base URL: http://host.docker.internal:11434
+API Key: leer
+```
 ---
 
 ## 4. Oberfläche öffnen
