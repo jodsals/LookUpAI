@@ -97,7 +97,7 @@ Port: 5432
 
 ```
 Base URL: http://host.docker.internal:11434
-API Key: leer*
+API Key: *leer*
 ```
 ---
 
