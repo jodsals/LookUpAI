@@ -63,7 +63,6 @@ Dort kann der Workflow importiert werden.
 
 1. In n8n oben rechts auf **Import** klicken.
 2. Die Datei **workflow.json** auswählen und bestätigen.
-3. Ollama lokal herunterladen (Modelle: mistral:7b-instruct & qwen2.5:14b)
 
 ### 3.1 Credentials einrichten
 
@@ -91,6 +90,15 @@ Password: lookup
 Port: 5432
 ```
 
+#### Ollama
+
+- In n8n unter **Credentials → New → Postgres**
+- Folgende Werte eintragen:
+
+```
+Base URL: http://host.docker.internal:11434
+API Key: leer*
+```
 ---
 
 ## 4. Oberfläche öffnen
