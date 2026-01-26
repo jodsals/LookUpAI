@@ -8,8 +8,6 @@ Kurz gesagt:
 Input: Liste von Personen
 Output: geprüfte Kurzbiografien als PDF
 
-⸻
-
 Team
 
 Wir sind eine Gruppe von fünf Personen:
@@ -74,7 +72,7 @@ Damit der Workflow funktioniert, müssen die benutzten Credentials angelegt werd
 - Als API-Key den bereitgestellten Schlüssel eintragen:
 
 ```
-a411225ee9daf95c81081e62cdb25ff8df2f741fd4ddddc1a5154fec7229a0dc
+SECRET
 ```
 
 #### Postgres
@@ -99,6 +97,22 @@ Port: 5432
 Base URL: http://host.docker.internal:11434
 API Key: leer
 ```
+
+### 3.2 Benötigte Ollama-Modelle
+
+Für den Workflow werden folgende Ollama-Modelle benötigt. Diese müssen vor der Nutzung in dem 
+Ollama Container manuell (durch eingabe der Befehle in der Container CLI) heruntergeladen werden:
+
+```bash
+ollama pull mistral:7b-instruct
+ollama pull qwen2.5:14b
+```
+
+| Modell | Verwendung im Workflow |
+|--------|------------------------|
+| `mistral:7b-instruct` | Extraktion von Personendaten aus dem Prompt, Clustering der Suchergebnisse |
+| `qwen2.5:14b` | Erstellung des finalen Fact Sheets / Steckbriefs |
+
 ---
 
 ## 4. Oberfläche öffnen
@@ -118,7 +132,7 @@ Danach kann die Oberfläche sofort genutzt werden.
 ## 5. Dateistruktur (Empfehlung)
 
 ```
-projekt/
+lookup/
 │
 ├── docker-compose.yml
 ├── oberflaeche.html
